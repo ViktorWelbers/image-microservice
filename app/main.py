@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 
 from app.utils.file_system import FileSystem
-from app.handler import router as ApiRouter
+from app.handler import router as api_router
 from app.utils.configuration import get_settings
 
 
@@ -22,7 +22,7 @@ app = FastAPI(
     servers=[
         {"url": get_settings().base_url, "description": "Base Url"}
     ])
-app.include_router(ApiRouter, prefix=get_settings().base_url)
+app.include_router(api_router, prefix=get_settings().base_url)
 use_route_names_as_operation_ids(app)
 
 
@@ -30,7 +30,7 @@ use_route_names_as_operation_ids(app)
 async def startup_event():
     try:
         FileSystem.remove_all_files()
-    except:
+    except Exception:
         pass
 
 
