@@ -1,0 +1,23 @@
+version: '3.3'
+services:
+  backend:
+    container_name: backend
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - backenddata:/data/files
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+volumes:
+  mongodata:
+  backenddata:

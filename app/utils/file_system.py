@@ -37,6 +37,7 @@ class FileSystem:
         shutil.rmtree(temp)
 
     @classmethod
-    def remove_all_files(cls):
+    def list_all_files(cls):
         temp = Path(cls._get_root(), get_settings().upload_folder)
-        shutil.rmtree(temp)
+        for child in temp.iterdir():
+            print(child)

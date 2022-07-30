@@ -8,8 +8,13 @@ class Settings(BaseSettings):
     user_folder = "projects"
     base_url = "/api"
     log_level = "INFO"
+    mongo_url = "mongodb://mongodb:27017/admin"
+    mongo_password = "password"
+    mongo_user = "admin"
 
 
 @lru_cache()
 def get_settings() -> Settings:
     return Settings()
+
+

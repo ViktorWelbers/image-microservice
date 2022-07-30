@@ -29,7 +29,7 @@ use_route_names_as_operation_ids(app)
 @app.on_event("startup")
 async def startup_event():
     try:
-        FileSystem.remove_all_files()
+        FileSystem.list_all_files()
     except Exception:
         pass
 
