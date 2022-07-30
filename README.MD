@@ -13,6 +13,7 @@ This will all be wrapped in a docker container at some point, but for now it is 
 
 List of features to come:
 
-- Integrate with MongoDB
-- Image Retrieval instead of just retrieving the image parameters as a json
-- Docker Container
+- [x] Integrate with MongoDB 
+- [x] Docker Container and Docker Compose for DB and Service
+- [ ] Image Retrieval instead of just retrieving the image parameters as a json
+- [ ] Write proper tests :-)
