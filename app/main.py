@@ -5,10 +5,10 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 
-from app.handler import router as api_router
-from app.utils.configuration import LogConfig
-from app.utils.configuration import get_settings
-from app.utils.file_system_utils import FileManagement
+from app.api import router as api_router
+from app.configuration import LogConfig
+from app.configuration import get_settings
+from app.entities import FileManagement
 
 
 def use_route_names_as_operation_ids(fast_app: FastAPI) -> None:

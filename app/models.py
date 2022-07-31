@@ -1,8 +1,11 @@
 from pydantic import BaseModel
+from pydantic.typing import Optional
 
 
-class Image(BaseModel):
+class ImageDocument(BaseModel):
     file_path: str
     uuid: str
     client_id: str
     file_name: str
+    content_type: str
+    tags: Optional[dict] = None

@@ -7,10 +7,10 @@ from pymongo import MongoClient
 
 class ImageRepository:
     def __init__(self, mongo_client: MongoClient):
-        self.collection = mongo_client.get_database('images').get_collection('uploads')
+        self.collection = mongo_client.get_database('microservice').get_collection('image_uploads')
         self.logger = logging.getLogger("image_service")
 
-    def store_image(self, image: dict) -> ObjectId:
+    def put_image(self, image: dict) -> ObjectId:
         result = self.collection.insert_one(image)
         return result.inserted_id
 

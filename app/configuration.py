@@ -6,7 +6,6 @@ from pydantic import BaseSettings
 
 class Settings(BaseSettings):
     upload_folder = "files"
-    user_folder = "projects"
     base_url = "/api"
     log_level = "INFO"
     mongo_url = "mongodb://mongodb:27017/admin"

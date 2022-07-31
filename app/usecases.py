@@ -1,44 +1,67 @@
+from abc import ABC
+from pathlib import Path
 from uuid import uuid4, UUID
 
+from PIL import Image
+from PIL.ExifTags import TAGS
 from fastapi import UploadFile
 
-from app.models import Image
+from app.entities import FileManagement
+from app.models import ImageDocument
 from app.repositories import ImageRepository
-from app.utils.file_system_utils import FileManagement
 
 
-class ImageUseCase:
-    def __init__(self, repository: ImageRepository):
+class ImageUseCase(ABC):
+    def __init__(self, repository: ImageRepository, file_management: FileManagement):
         self.repository = repository
+        self.file_management = file_management
 
-    def upload(self, file: UploadFile, client_id: str) -> UUID:
-        uuid = uuid4()
-        file_path = FileManagement.generate_filepath(uuid, file.filename)
+
+class ImageUploadUseCase(ImageUseCase):
+
+    def _store_image_in_filesystem(self, file: UploadFile, uuid: UUID) -> Path:
+        file_path = self.file_management.generate_file(uuid, file.filename)
         with open(file_path, "wb") as f:
             f.write(file.file.read())
-        self.repository.store_image(
-            Image(file_path=str(file_path), uuid=str(uuid), client_id=client_id, file_name=file.filename).dict()
-        )
-        return uuid
+        return file_path
 
-    def delete_image_uuid(self, uuid: UUID) -> dict:
+    @staticmethod
+    def _extract_meta_data_from_image(file_path: Path) -> dict[str, str]:
+        meta_data = Image.open(file_path)
+        data = {str(TAGS[k]): str(v) for k, v in meta_data.getexif().items() if k in TAGS}
+        meta_data.close()
+        return data
+
+    def upload(self, file: UploadFile, client_id: str) -> dict[str, str]:
+        uuid = uuid4()
+        file_path = self._store_image_in_filesystem(file, uuid)
+        self.repository.put_image(
+            ImageDocument(file_path=str(file_path),
+                          uuid=str(uuid),
+                          client_id=client_id,
+                          file_name=file.filename,
+                          content_type=file.content_type,
+                          tags=self._extract_meta_data_from_image(file_path)
+                          ).dict()
+        )
+        return {'uuid': str(uuid)}
+
+
+class ImageDeleteUseCase(ImageUseCase):
+    def delete_image_uuid(self, uuid: UUID) -> dict[str, str]:
         success = self.repository.delete_image(uuid)
         if success:
-            FileManagement.remove_file(str(uuid))
-        return {'success': success}
+            self.file_management.remove_file(str(uuid))
+        return {'Result': 'OK' if success else 'NOT_FOUND'}
 
-    def get_images_for_client_id(self, client_id: str) -> list:
+
+class ImageRetrievalUseCase(ImageUseCase):
+    def get_images_for_client_id(self, client_id: str) -> list[ImageDocument]:
         result = self.repository.query_images('client_id', client_id)
-        return [Image(**image) for image in result]
+        return [ImageDocument(**image) for image in result]
 
-    def get_image_for_uuid(self, uuid: UUID) -> Image | None:
+    def get_image_for_uuid(self, uuid: UUID) -> ImageDocument | None:
         result = self.repository.query_image('uuid', str(uuid))
         if result:
-            return Image(**result)
-        else:
-            return None
-
-    def download_image_uuid(self, uuid: UUID) -> bytes:
-        file_path = self.repository.get_image_file_path(uuid)
-        with open(file_path, "rb") as f:
-            return f.read()
+            return ImageDocument(**result)
+        return None
