@@ -1,3 +1,4 @@
+import logging
 import shutil
 from pathlib import Path
 from uuid import UUID
@@ -5,7 +6,8 @@ from uuid import UUID
 from app.utils.configuration import get_settings
 
 
-class FileSystem:
+class FileManagement:
+    logger = logging.getLogger(get_settings().logger_name)
 
     @classmethod
     @staticmethod
@@ -26,7 +28,7 @@ class FileSystem:
             return child
 
     @classmethod
-    def generate_file(cls, uuid: UUID, filename: str) -> Path:
+    def generate_filepath(cls, uuid: UUID, filename: str) -> Path:
         folder = Path(cls._get_file_directory(), str(uuid))
         folder.mkdir()
         return Path(folder, filename)
@@ -34,10 +36,16 @@ class FileSystem:
     @classmethod
     def remove_file(cls, uuid: str):
         temp = Path(cls._get_root(), get_settings().upload_folder, uuid)
-        shutil.rmtree(temp)
+        try:
+            shutil.rmtree(temp)
+            cls.logger.info(f'Removed file {temp} from filesystem')
+        except Exception as e:
+            cls.logger.error(f'Error removing file {temp} from filesystem: {e}')
 
     @classmethod
     def list_all_files(cls):
-        temp = Path(cls._get_root(), get_settings().upload_folder)
-        for child in temp.iterdir():
-            print(child)
+        cls._get_file_directory().iterdir()
+        folder = Path(cls._get_root(), get_settings().upload_folder)
+        for child in folder.iterdir():
+            cls.logger.info(f'file with path: {child} found')
+        cls.logger.info(f'Found a total of {len(list(folder.iterdir()))} files')

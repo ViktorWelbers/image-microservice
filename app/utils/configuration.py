@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import BaseModel
 from pydantic import BaseSettings
 
 
@@ -11,6 +12,7 @@ class Settings(BaseSettings):
     mongo_url = "mongodb://mongodb:27017/admin"
     mongo_password = "password"
     mongo_user = "admin"
+    logger_name = "image_service"
 
 
 @lru_cache()
@@ -18,3 +20,30 @@ def get_settings() -> Settings:
     return Settings()
 
 
+class LogConfig(BaseModel):
+    """Logging configuration to be set for the server"""
+
+    LOGGER_NAME: str = get_settings().logger_name
+    LOG_FORMAT: str = "%(levelprefix)s | %(asctime)s | %(message)s"
+    LOG_LEVEL: str = get_settings().log_level
+
+    # Logging config
+    version = 1
+    disable_existing_loggers = False
+    formatters = {
+        "default": {
+            "()": "uvicorn.logging.DefaultFormatter",
+            "fmt": LOG_FORMAT,
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    }
+    handlers = {
+        "default": {
+            "formatter": "default",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stderr",
+        },
+    }
+    loggers = {
+        LOGGER_NAME: {"handlers": ["default"], "level": LOG_LEVEL},
+    }

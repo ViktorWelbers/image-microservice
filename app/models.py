@@ -5,3 +5,4 @@ class Image(BaseModel):
     file_path: str
     uuid: str
     client_id: str
+    file_name: str
