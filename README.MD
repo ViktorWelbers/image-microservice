@@ -19,5 +19,5 @@ List of features to come / that have been implemented:
 - [x] Integrate with MongoDB 
 - [x] Docker Container and Docker Compose for DB and Service
 - [x] Image Retrieval instead of just retrieving the image parameters as a json from the MongoDB
-- [ ] Write proper tests :-)
+- [x] Implement Unittests
 - [ ] Add build step in CI-Pipeline to push to DockerHub
