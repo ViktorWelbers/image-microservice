@@ -1,7 +1,5 @@
 # Image Management Microservice
 
-## What is it?
-
 One of several microservices that will be used to create a backend for an Android/IOS app.
 
 ## Idea
