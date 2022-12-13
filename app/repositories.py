@@ -7,7 +7,9 @@ from pymongo import MongoClient
 
 class ImageRepository:
     def __init__(self, mongo_client: MongoClient):
-        self.collection = mongo_client.get_database('microservice').get_collection('image_uploads')
+        self.collection = mongo_client.get_database("microservice").get_collection(
+            "image_uploads"
+        )
         self.logger = logging.getLogger("image_service")
 
     def put_image(self, image: dict) -> ObjectId:
@@ -15,7 +17,7 @@ class ImageRepository:
         return result.inserted_id
 
     def delete_image(self, uuid: UUID) -> bool:
-        result = self.collection.delete_one({'uuid': str(uuid)})
+        result = self.collection.delete_one({"uuid": str(uuid)})
         self.logger.info(f"Deleted image with uuid {uuid} from database")
         return result.deleted_count > 0
 
