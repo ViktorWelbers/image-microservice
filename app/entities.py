@@ -30,7 +30,7 @@ class FileManagement:
             return child
 
     @classmethod
-    def generate_file(cls, uuid: UUID, filename: str) -> Path:
+    def generate_filepath(cls, uuid: UUID, filename: str) -> Path:
         folder = Path(cls._get_file_directory(), str(uuid))
         folder.mkdir()
         return Path(folder, filename)
@@ -40,20 +40,22 @@ class FileManagement:
         temp = Path(cls._get_root(), get_settings().upload_folder, uuid)
         try:
             shutil.rmtree(temp)
-            cls.logger.info(f'Removed file {temp} from filesystem')
+            cls.logger.info(f"Removed file {temp} from filesystem")
         except Exception as e:
-            cls.logger.error(f'Error removing file {temp} from filesystem: {e}')
+            cls.logger.error(f"Error removing file {temp} from filesystem: {e}")
 
     @classmethod
     def list_all_files(cls):
         cls._get_file_directory()
         folder = Path(cls._get_root(), get_settings().upload_folder)
         for child in folder.iterdir():
-            cls.logger.info(f'file with path: {child} found')
-        cls.logger.info(f'Found a total of {len(list(folder.iterdir()))} files')
+            cls.logger.info(f"file with path: {child} found")
+        cls.logger.info(f"Found a total of {len(list(folder.iterdir()))} files")
 
 
 def serve_file(image_document: ImageDocument) -> FileResponse:
-    return FileResponse(path=image_document.file_path,
-                        filename=image_document.file_name,
-                        media_type=image_document.content_type)
+    return FileResponse(
+        path=image_document.file_path,
+        filename=image_document.file_name,
+        media_type=image_document.content_type,
+    )
