@@ -1,7 +1,8 @@
 from fastapi import Depends
 from pymongo import MongoClient
 
-from app.entities import FileManagement
+from app.configuration import get_settings
+from app.file_system import AzureFileSystem
 from app.repositories import ImageRepository
 from app.usecases import (
     ImageUseCase,
@@ -9,7 +10,6 @@ from app.usecases import (
     ImageDeleteUseCase,
     ImageRetrievalUseCase,
 )
-from app.configuration import get_settings
 
 
 async def get_mongo_client() -> MongoClient:
@@ -24,6 +24,14 @@ async def get_mongo_client() -> MongoClient:
         mongo_client.close()
 
 
+def get_azure_file_system() -> AzureFileSystem:
+    return AzureFileSystem(
+        get_settings().azure_account_name,
+        get_settings().azure_account_key,
+        get_settings().azure_share_name,
+    )
+
+
 async def get_repository(
     mongo_client: MongoClient = Depends(get_mongo_client),
 ) -> ImageRepository:
@@ -32,17 +40,23 @@ async def get_repository(
 
 async def get_upload_use_case(
     repository: ImageRepository = Depends(get_repository),
+    file_system: AzureFileSystem = Depends(get_azure_file_system),
 ) -> ImageUseCase:
-    return ImageUploadUseCase(repository, FileManagement())
+    return ImageUploadUseCase(
+        repository,
+        file_system,
+    )
 
 
 async def get_delete_use_case(
     repository: ImageRepository = Depends(get_repository),
+    file_system: AzureFileSystem = Depends(get_azure_file_system),
 ) -> ImageUseCase:
-    return ImageDeleteUseCase(repository, FileManagement())
+    return ImageDeleteUseCase(repository, file_system)
 
 
 async def get_retrieval_use_case(
     repository: ImageRepository = Depends(get_repository),
+    file_system: AzureFileSystem = Depends(get_azure_file_system),
 ) -> ImageUseCase:
-    return ImageRetrievalUseCase(repository, FileManagement())
+    return ImageRetrievalUseCase(repository, file_system)
