@@ -1,53 +1,48 @@
 import io
 from abc import ABC
-from pathlib import Path
 from uuid import uuid4, UUID
 
 from PIL import Image
-from PIL.ExifTags import TAGS
 from fastapi import UploadFile
 
-from app.entities import FileManagement
+from app.file_system import AzureFileSystem
 from app.models import ImageDocument
 from app.repositories import ImageRepository
 
 
 class ImageUseCase(ABC):
-    def __init__(self, repository: ImageRepository, file_management: FileManagement):
+    def __init__(self, repository: ImageRepository, file_system: AzureFileSystem):
         self.repository = repository
-        self.file_management = file_management
+        self.file_system = file_system
 
 
 class ImageUploadUseCase(ImageUseCase):
     image_size = (512, 512)
 
-    def _store_image_in_filesystem(self, file: UploadFile, uuid: UUID) -> Path:
-        file_path = self.file_management.generate_filepath(uuid, file.filename)
-        bytes = io.BytesIO(file.file.read())
-        image = Image.open(bytes)
-        image.thumbnail(ImageUploadUseCase.image_size, Image.ANTIALIAS)
-        image.save(file_path, image.format)
-        image.close()
-        return file_path
-
-    @staticmethod
-    def _extract_meta_data_from_image(file_path: Path) -> dict[str, str]:
-        image = Image.open(file_path)
-        data = {str(TAGS[k]): str(v) for k, v in image.getexif().items() if k in TAGS}
-        image.close()
-        return data
-
-    def upload(self, file: UploadFile, client_id: str) -> dict[str, str]:
+    def upload(
+        self, file: UploadFile, client_id: str, processed: bool
+    ) -> dict[str, str]:
         uuid = uuid4()
-        file_path = self._store_image_in_filesystem(file, uuid)
+        bytes_io = io.BytesIO(file.file.read())
+        image = Image.open(bytes_io)
+        image.thumbnail(ImageUploadUseCase.image_size, Image.ANTIALIAS)
+        cropped_image_bytes = io.BytesIO()
+        image.save(cropped_image_bytes, format=image.format)
+        cropped_image_bytes.seek(0)
+        self.file_system.upload_file(
+            file_name=file.filename,
+            file_content=cropped_image_bytes.read(),
+            client_id=client_id,
+            uuid=uuid,
+        )
         self.repository.put_image(
             ImageDocument(
-                file_path=str(file_path),
+                file_path=client_id + "/" + str(uuid),
                 uuid=str(uuid),
                 client_id=client_id,
                 file_name=file.filename,
                 content_type=file.content_type,
-                tags=self._extract_meta_data_from_image(file_path),
+                tags={"processed": processed},
             ).dict()
         )
         return {"uuid": str(uuid)}
@@ -57,7 +52,7 @@ class ImageDeleteUseCase(ImageUseCase):
     def delete_image_uuid(self, uuid: UUID) -> dict[str, str]:
         success = self.repository.delete_image(uuid)
         if success:
-            self.file_management.remove_file(str(uuid))
+            self.file_system.remove_file(str(uuid))
         return {"Result": "OK" if success else "NOT_FOUND"}
 
 

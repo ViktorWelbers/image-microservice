@@ -1,7 +1,6 @@
+import os
 from functools import lru_cache
-
-from pydantic import BaseModel
-from pydantic import BaseSettings
+from pydantic import BaseModel, BaseSettings
 
 
 class Settings(BaseSettings):
@@ -12,6 +11,9 @@ class Settings(BaseSettings):
     mongo_password = "password"
     mongo_user = "admin"
     logger_name = "image_service"
+    azure_account_name = os.getenv("AZURE_ACCOUNT_NAME")
+    azure_account_key = os.getenv("AZURE_ACCOUNT_KEY")
+    azure_share_name = os.getenv("AZURE_SHARE_NAME")
 
 
 @lru_cache()

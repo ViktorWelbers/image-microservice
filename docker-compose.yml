@@ -8,6 +8,10 @@ services:
       - "5000:5000"
     volumes:
       - backenddata:/data/files
+    environment:
+      - AZURE_ACCOUNT_NAME=${AZURE_ACCOUNT_NAME}
+      - AZURE_ACCOUNT_KEY=${AZURE_ACCOUNT_KEY}
+      - AZURE_SHARE_NAME=${AZURE_SHARE_NAME}
   mongodb:
     image: mongo
     container_name: mongodb

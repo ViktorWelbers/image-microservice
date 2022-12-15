@@ -8,7 +8,7 @@ from app.dependencies import (
     get_delete_use_case,
     get_retrieval_use_case,
 )
-from app.entities import serve_file
+from app.file_system import serve_file
 from app.models import ImageDocument
 from app.usecases import ImageRetrievalUseCase, ImageUploadUseCase, ImageDeleteUseCase
 
@@ -23,10 +23,11 @@ router = APIRouter(prefix="/images", tags=["images"])
 )
 async def upload_image(
     client_id: str,
+    processed: bool = False,
     file: UploadFile = File(description="", media_type="image/*"),
     use_case: ImageUploadUseCase = Depends(get_upload_use_case),
 ) -> JSONResponse:
-    result = use_case.upload(file, client_id)
+    result = use_case.upload(file, client_id, processed)
     return JSONResponse(content=result)
 
 
