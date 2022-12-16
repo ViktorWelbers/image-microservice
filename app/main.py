@@ -5,8 +5,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 
-from app.configuration import LogConfig
-from app.configuration import get_settings
+from app.settings import LogConfig
+from app.settings import get_settings
 from app.routes import router as api_router
 
 

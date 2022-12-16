@@ -11,7 +11,11 @@ from app.repositories import ImageRepository
 class TestImageRepository(TestCase):
     def setUp(self) -> None:
         self.mongo_client = Mock(MongoClient)
-        self.repository = ImageRepository(mongo_client=self.mongo_client)
+        self.repository = ImageRepository(
+            mongo_client=self.mongo_client,
+            database_name=sentinel.database_name,
+            collection_name=sentinel.collection_name,
+        )
         self.collection = Mock(Collection)
         self.repository.collection = self.collection
 

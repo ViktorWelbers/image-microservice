@@ -1,12 +1,12 @@
 import io
-from abc import ABC
+from abc import ABC, abstractmethod
 from uuid import uuid4, UUID
 
 from PIL import Image
 from fastapi import UploadFile
 
 from app.file_system import AzureFileSystem
-from app.models import ImageDocument
+from app.schemas import ImageDocument
 from app.repositories import ImageRepository
 
 
@@ -15,11 +15,17 @@ class ImageUseCase(ABC):
         self.repository = repository
         self.file_system = file_system
 
+    @abstractmethod
+    def execute(
+        self, *args, **kwargs
+    ) -> dict[str, str] | list[dict] | tuple[bytes, str] | bool:
+        raise NotImplementedError
+
 
 class ImageUploadUseCase(ImageUseCase):
     image_size = (512, 512)
 
-    def upload(
+    def execute(
         self, file: UploadFile, client_id: str, processed: bool
     ) -> dict[str, str]:
         uuid = uuid4()
@@ -29,12 +35,6 @@ class ImageUploadUseCase(ImageUseCase):
         cropped_image_bytes = io.BytesIO()
         image.save(cropped_image_bytes, format=image.format)
         cropped_image_bytes.seek(0)
-        self.file_system.upload_file(
-            file_name=file.filename,
-            file_content=cropped_image_bytes.read(),
-            client_id=client_id,
-            uuid=uuid,
-        )
         self.repository.put_image(
             ImageDocument(
                 file_path=client_id + "/" + str(uuid),
@@ -45,24 +45,37 @@ class ImageUploadUseCase(ImageUseCase):
                 tags={"processed": processed},
             ).dict()
         )
+        self.file_system.upload_file(
+            file_name=file.filename,
+            file_content=cropped_image_bytes.read(),
+            client_id=client_id,
+            uuid=uuid,
+        )
         return {"uuid": str(uuid)}
 
 
 class ImageDeleteUseCase(ImageUseCase):
-    def delete_image_uuid(self, uuid: UUID) -> dict[str, str]:
-        success = self.repository.delete_image(uuid)
-        if success:
-            self.file_system.remove_file(str(uuid))
-        return {"Result": "OK" if success else "NOT_FOUND"}
+    def execute(self, uuid: UUID) -> bool:
+        document = self.repository.query_image(field_key="uuid", field_value=str(uuid))
+        if not document:
+            return False
+        self.file_system.delete_file(
+            file_name=document["file_name"], file_path=document["file_path"]
+        )
+        self.repository.delete_image(uuid)
+        return True
 
 
-class ImageRetrievalUseCase(ImageUseCase):
-    def get_images_for_client_id(self, client_id: str) -> list[ImageDocument]:
-        result = self.repository.query_images("client_id", client_id)
-        return [ImageDocument(**image) for image in result]
+class ImageMetadataUseCase(ImageUseCase):
+    def execute(self, client_id: str) -> list[dict]:
+        return self.repository.query_images("client_id", client_id)
 
-    def get_image_for_uuid(self, uuid: UUID) -> ImageDocument | None:
-        result = self.repository.query_image("uuid", str(uuid))
-        if result:
-            return ImageDocument(**result)
-        return None
+
+class ImageDownloadUseCase(ImageUseCase):
+    def execute(self, uuid: UUID) -> tuple[bytes, str] | tuple[None, None]:
+        document = self.repository.query_image(field_key="uuid", field_value=str(uuid))
+        if document is None:
+            return None, None
+        return self.file_system.download_file(
+            file_name=document["file_name"], file_path=document["file_path"]
+        )

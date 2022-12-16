@@ -2,71 +2,65 @@ from uuid import UUID
 
 from fastapi import APIRouter, UploadFile, File, Depends
 from fastapi.responses import JSONResponse, FileResponse
+from starlette.responses import Response
 
 from app.dependencies import (
-    get_upload_use_case,
-    get_delete_use_case,
-    get_retrieval_use_case,
+    get_download_handler,
+    get_upload_handler,
+    get_delete_handler,
+    get_metadata_handler,
 )
-from app.file_system import serve_file
-from app.models import ImageDocument
-from app.usecases import ImageRetrievalUseCase, ImageUploadUseCase, ImageDeleteUseCase
+from app.handlers import DownloadHandler, MetadataHandler, DeleteHandler, UploadHandler
+from app.schemas import ImageDocument
 
-router = APIRouter(prefix="/images", tags=["images"])
+router = APIRouter(prefix="/images")
 
 
 @router.post(
     "/upload/{client_id}",
     response_class=JSONResponse,
     response_model=dict,
-    tags=["images"],
+    tags=["upload"],
 )
 async def upload_image(
     client_id: str,
     processed: bool = False,
     file: UploadFile = File(description="", media_type="image/*"),
-    use_case: ImageUploadUseCase = Depends(get_upload_use_case),
+    handler: UploadHandler = Depends(get_upload_handler),
 ) -> JSONResponse:
-    result = use_case.upload(file, client_id, processed)
-    return JSONResponse(content=result)
+    return handler.handle(file, client_id, processed)
 
 
 @router.post(
-    "/delete/", response_class=JSONResponse, response_model=dict, tags=["images"]
+    "/delete/{uuid}",
+    response_class=JSONResponse,
+    response_model=dict,
+    tags=["delete"],
 )
 def delete_image(
-    uuid: UUID, use_case: ImageDeleteUseCase = Depends(get_delete_use_case)
+    uuid: UUID, handler: DeleteHandler = Depends(get_delete_handler)
 ) -> JSONResponse:
-    result = use_case.delete_image_uuid(uuid)
-    return JSONResponse(content=result)
+    return handler.handle(uuid)
 
 
 @router.get(
-    "/get_images",
+    "/images_metadata/{client_id}",
     response_model=list[ImageDocument],
     response_class=JSONResponse,
-    tags=["images"],
+    tags=["metadata"],
 )
-def get_images_for_client_id(
-    client_id: str, use_case: ImageRetrievalUseCase = Depends(get_retrieval_use_case)
+def get_metadata_images_for_client_id(
+    client_id: str, handler: MetadataHandler = Depends(get_metadata_handler)
 ) -> list[ImageDocument]:
-    return use_case.get_images_for_client_id(client_id)
+    return handler.handle(client_id)
 
 
 @router.get(
-    "/get_image/",
-    response_model=ImageDocument,
-    response_class=JSONResponse,
-    tags=["images"],
+    "/download/{uuid}",
+    response_class=FileResponse,
+    tags=["download"],
 )
-def get_image_for_uuid(
-    uuid: UUID, use_case: ImageRetrievalUseCase = Depends(get_retrieval_use_case)
-) -> ImageDocument:
-    return use_case.get_image_for_uuid(uuid)
-
-
-@router.get("/download/{uuid}", response_class=FileResponse, tags=["images"])
 def download_image(
-    uuid: UUID, use_case: ImageRetrievalUseCase = Depends(get_retrieval_use_case)
-) -> FileResponse:
-    return serve_file(use_case.get_image_for_uuid(uuid))
+    uuid: UUID, handler: DownloadHandler = Depends(get_download_handler)
+) -> Response:
+    return handler.handle(uuid)

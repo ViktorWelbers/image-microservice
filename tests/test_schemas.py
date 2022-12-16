@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from app.models import ImageDocument
+from app.schemas import ImageDocument
 
 
 class TestModels(TestCase):
