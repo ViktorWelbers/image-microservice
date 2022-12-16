@@ -6,9 +6,14 @@ from pymongo import MongoClient
 
 
 class ImageRepository:
-    def __init__(self, mongo_client: MongoClient):
-        self.collection = mongo_client.get_database("microservice").get_collection(
-            "image_uploads"
+    def __init__(
+        self,
+        mongo_client: MongoClient,
+        database_name: str,
+        collection_name: str,
+    ):
+        self.collection = mongo_client.get_database(database_name).get_collection(
+            collection_name
         )
         self.logger = logging.getLogger("image_service")
 

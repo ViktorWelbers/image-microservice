@@ -4,16 +4,15 @@ from pydantic import BaseModel, BaseSettings
 
 
 class Settings(BaseSettings):
-    upload_folder = "files"
     base_url = "/api"
     log_level = "INFO"
-    mongo_url = "mongodb://mongodb:27017/admin"
-    mongo_password = "password"
-    mongo_user = "admin"
     logger_name = "image_service"
-    azure_account_name = os.getenv("AZURE_ACCOUNT_NAME")
-    azure_account_key = os.getenv("AZURE_ACCOUNT_KEY")
-    azure_share_name = os.getenv("AZURE_SHARE_NAME")
+    mongo_uri: str = os.getenv("MONGO_URI")
+    mongo_db_name: str = os.getenv("MONGO_DB_NAME")
+    mongo_collection: str = os.getenv("MONGO_COLLECTION")
+    azure_account_name: str = os.getenv("AZURE_ACCOUNT_NAME")
+    azure_account_key: str = os.getenv("AZURE_ACCOUNT_KEY")
+    azure_share_name: str = os.getenv("AZURE_SHARE_NAME")
 
 
 @lru_cache()
