@@ -1,127 +1,143 @@
-from collections import namedtuple
+from io import BytesIO
 from unittest import TestCase
 from unittest.mock import Mock, patch, sentinel
 
+from PIL import Image
+
 from app.file_system import AzureFileSystem
-from app.schemas import ImageDocument
 from app.repositories import ImageRepository
+from app.schemas import ImageDocument
 from app.usecases import (
     ImageUploadUseCase,
     ImageDeleteUseCase,
-    ImageMetadataUseCase,
     ImageDownloadUseCase,
+    ImageMetadataUseCase,
 )
 
 
 class TestImageUploadUseCase(TestCase):
     def setUp(self) -> None:
         self.repository = Mock(ImageRepository)
-        self.file_management = Mock(AzureFileSystem)
-        self.use_case = ImageUploadUseCase(self.repository, self.file_management)
+        self.file_system = Mock(AzureFileSystem)
+        self.use_case = ImageUploadUseCase(self.repository, self.file_system)
 
     @patch("app.usecases.uuid4")
     def test_upload(self, mock_uuid4) -> None:
-        with patch(
-            "app.usecases.ImageUploadUseCase._store_image_in_filesystem"
-        ) as mock_store_image_in_filesystem:
-            with patch(
-                "app.usecases.ImageUploadUseCase._extract_meta_data_from_image"
-            ) as mock_meta_data_from_image:
-                file = namedtuple("filename", ["filename", "content_type"])(
-                    "test.jpg", "image/jpeg"
-                )
-                mock_uuid4.return_value = "test_uuid"
-                mock_store_image_in_filesystem.return_value = "test_file_path"
-                mock_meta_data_from_image.return_value = {"tags": "meta_data"}
+        # when
+        bytes_io = BytesIO()
+        image = Image.new("RGBA", size=(50, 50), color=(256, 0, 0))
+        image.save(bytes_io, "PNG")
+        bytes_io.seek(0)
+        mock_uuid4.return_value = sentinel.uuid
+        file = Mock()
+        file_content = bytes_io.read()
+        file.file.read.return_value = file_content
+        file.filename = "test.png"
+        file.content_type = "image/png"
 
-                self.use_case.execute(file, "test_client_id")  # noqa: F
-                self.repository.put_image.assert_called_with(
-                    {
-                        "file_path": "test_file_path",
-                        "uuid": "test_uuid",
-                        "client_id": "test_client_id",
-                        "file_name": "test.jpg",
-                        "content_type": "image/jpeg",
-                        "tags": {"tags": "meta_data"},
-                    }
-                )
+        # then
+        self.use_case.execute(file, "test_client_id", sentinel.processed)
+
+        # expect
+        self.repository.put_image.assert_called_with(
+            {
+                "file_path": "test_client_id/sentinel.uuid",
+                "uuid": "sentinel.uuid",
+                "client_id": "test_client_id",
+                "file_name": "test.png",
+                "content_type": "image/png",
+                "tags": {"processed": sentinel.processed},
+            }
+        )
+        self.file_system.upload_file.assert_called_with(
+            file_name="test.png",
+            file_content=file_content,
+            client_id="test_client_id",
+            uuid=sentinel.uuid,
+        )
 
 
 class TestImageDeleteUseCase(TestCase):
     def setUp(self) -> None:
         self.repository = Mock(ImageRepository)
-        self.file_management = Mock(AzureFileSystem)
-        self.use_case = ImageDeleteUseCase(self.repository, self.file_management)
+        self.file_system = Mock(AzureFileSystem)
+        self.use_case = ImageDeleteUseCase(self.repository, self.file_system)
 
     def test_delete_image_uuid_success(self) -> None:
-        self.repository.delete_image.return_value = True
+        self.repository.query_image.return_value = {
+            "file_path": "test_client_id/sentinel.uuid",
+            "file_name": "test.png",
+        }
 
         result = self.use_case.execute(sentinel.uuid)
 
-        self.file_management.remove_file.assert_called_with(str(sentinel.uuid))
+        self.repository.query_image.assert_called_with(
+            field_key="uuid", field_value="sentinel.uuid"
+        )
+        self.file_system.delete_file.assert_called_with(
+            file_name="test.png", file_path="test_client_id/sentinel.uuid"
+        )
         self.repository.delete_image.assert_called_with(sentinel.uuid)
-        self.assertEqual({"Result": "OK"}, result)
+        self.assertEqual(True, result)
 
     def test_delete_image_uuid_no_success(self) -> None:
-        self.repository.delete_image.return_value = False
+        self.repository.query_image.return_value = False
 
         result = self.use_case.execute(sentinel.uuid)
 
-        self.file_management.remove_file.assert_not_called()
-        self.repository.delete_image.assert_called_with(sentinel.uuid)
-        self.assertEqual({"Result": "NOT_FOUND"}, result)
+        self.repository.query_image.assert_called_with(
+            field_key="uuid", field_value="sentinel.uuid"
+        )
+        self.file_system.delete_file.assert_not_called()
+        self.repository.delete_image.assert_not_called()
+        self.assertEqual(False, result)
+
+
+class ImageMetaDataUseCase(TestCase):
+    def setUp(self) -> None:
+        self.repository = Mock(ImageRepository)
+        self.file_system = Mock(AzureFileSystem)
+        self.use_case = ImageMetadataUseCase(self.repository, self.file_system)
+
+    def test_get_images_for_client_id(self) -> None:
+        self.repository.query_images.return_value = sentinel.result
+
+        result = self.use_case.execute(sentinel.client_id)
+
+        self.repository.query_images.assert_called_with("client_id", sentinel.client_id)
+        self.assertEqual(sentinel.result, result)
 
 
 class TestImageDownloadUseCase(TestCase):
     def setUp(self) -> None:
         self.repository = Mock(ImageRepository)
-        self.file_management = Mock(AzureFileSystem)
-        self.use_case = ImageDownloadUseCase(self.repository, self.file_management)
+        self.file_system = Mock(AzureFileSystem)
+        self.use_case = ImageDownloadUseCase(self.repository, self.file_system)
 
-    def test_get_images_for_client_id_returns_empty_list(self) -> None:
-        self.repository.query_images.return_value = []
-
-        result = self.use_case.execute(sentinel.client_id)
-
-        self.repository.query_images.assert_called_with("client_id", sentinel.client_id)
-        self.assertEqual([], result)
-
-    def test_get_images_for_client_id_returns_list_of_images(self) -> None:
-        expected = {
-            "uuid": "test_uuid",
-            "client_id": "test_client_id",
-            "file_name": "test_file_name",
-            "file_path": "test_file_path",
-            "content_type": "test_content_type",
-            "tags": {"tags": "test_tags"},
+    def test_download_image(self) -> None:
+        self.repository.query_image.return_value = {
+            "file_path": "test_client_id/sentinel.uuid",
+            "file_name": "test.png",
         }
-        self.repository.query_images.return_value = [expected]
+        self.file_system.download_file.return_value = sentinel.file_content
 
-        result = self.use_case.execute(sentinel.client_id)
+        result = self.use_case.execute(sentinel.uuid)
 
-        self.repository.query_images.assert_called_with("client_id", sentinel.client_id)
-        self.assertEqual([ImageDocument(**expected)], result)
+        self.repository.query_image.assert_called_with(
+            field_key="uuid", field_value="sentinel.uuid"
+        )
+        self.file_system.download_file.assert_called_with(
+            file_name="test.png", file_path="test_client_id/sentinel.uuid"
+        )
+        self.assertEqual(sentinel.file_content, result)
 
-    def test_get_image_for_uuid_returns_image(self) -> None:
-        self.repository.query_image.return_value = None
+    def test_download_image_with_invalid_uuid(self) -> None:
+        self.repository.query_image.return_value = {}
 
-        result = self.use_case.get_image_meta_data_for_uuid(sentinel.uuid)
+        result = self.use_case.execute(sentinel.uuid)
 
-        self.repository.query_image.assert_called_with("uuid", "sentinel.uuid")
-        self.assertEqual(None, result)
-
-    def test_get_image_for_uuid_returns_none(self) -> None:
-        expected = {
-            "uuid": "test_uuid",
-            "client_id": "test_client_id",
-            "file_name": "test_file_name",
-            "file_path": "test_file_path",
-            "content_type": "test_content_type",
-            "tags": {"tags": "test_tags"},
-        }
-        self.repository.query_image.return_value = expected
-
-        result = self.use_case.get_image_meta_data_for_uuid(sentinel.uuid)
-
-        self.repository.query_image.assert_called_with("uuid", "sentinel.uuid")
-        self.assertEqual(expected, result)
+        self.repository.query_image.assert_called_with(
+            field_key="uuid", field_value="sentinel.uuid"
+        )
+        self.file_system.download_file.assert_not_called()
+        self.assertEqual((None, None), result)

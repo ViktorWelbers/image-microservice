@@ -74,7 +74,7 @@ class ImageMetadataUseCase(ImageUseCase):
 class ImageDownloadUseCase(ImageUseCase):
     def execute(self, uuid: UUID) -> tuple[bytes, str] | tuple[None, None]:
         document = self.repository.query_image(field_key="uuid", field_value=str(uuid))
-        if document is None:
+        if not document:
             return None, None
         return self.file_system.download_file(
             file_name=document["file_name"], file_path=document["file_path"]
