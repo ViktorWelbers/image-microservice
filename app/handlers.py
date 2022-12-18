@@ -20,9 +20,7 @@ class Handler(ABC):
 
 
 class UploadHandler(Handler):
-    def handle(
-        self, file: UploadFile, client_id: str, processed: bool
-    ) -> JSONResponse:
+    def handle(self, file: UploadFile, client_id: str, processed: bool) -> JSONResponse:
         content = self.use_case.execute(file, client_id, processed)
         return JSONResponse(content=content, media_type="application/json")
 

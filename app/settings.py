@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     base_url = "/api"
     log_level = "INFO"
     logger_name = "image_service"
+    api_key: str = os.getenv("API_KEY")
     mongo_uri: str = os.getenv("MONGO_URI")
     mongo_db_name: str = os.getenv("MONGO_DB_NAME")
     mongo_collection: str = os.getenv("MONGO_COLLECTION")
