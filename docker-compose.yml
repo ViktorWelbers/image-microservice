@@ -12,6 +12,10 @@ services:
       - AZURE_ACCOUNT_NAME=${AZURE_ACCOUNT_NAME}
       - AZURE_ACCOUNT_KEY=${AZURE_ACCOUNT_KEY}
       - AZURE_SHARE_NAME=${AZURE_SHARE_NAME}
+      - MONGO_URI=${MONGO_URI}
+      - MONGO_DB=${MONGO_DB}
+      - MONGO_COLLECTION=${MONGO_COLLECTION}
+      - API_KEY=${API_KEY}
   mongodb:
     image: mongo
     container_name: mongodb
