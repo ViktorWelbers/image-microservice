@@ -11,7 +11,7 @@ from app.dependencies import (
     get_metadata_handler,
 )
 from app.handlers import DownloadHandler, MetadataHandler, DeleteHandler, UploadHandler
-from app.schemas import ImageDocument
+from app.schemas import ImageDocument, Payload
 
 router = APIRouter(prefix="/images")
 
@@ -24,11 +24,12 @@ router = APIRouter(prefix="/images")
 )
 async def upload_image(
     client_id: str,
+    origin_uuid: str = None,
     processed: bool = False,
     file: UploadFile = File(description="", media_type="image/*"),
     handler: UploadHandler = Depends(get_upload_handler),
 ) -> JSONResponse:
-    return handler.handle(file, client_id, processed)
+    return handler.handle(file, client_id, processed, origin_uuid)
 
 
 @router.post(

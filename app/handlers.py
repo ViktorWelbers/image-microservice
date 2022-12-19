@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import UploadFile
 from starlette.responses import Response, JSONResponse
 
-from app.schemas import ImageDocument
+from app.schemas import ImageDocument, Payload
 from app.usecases import (
     ImageUseCase,
 )
@@ -20,8 +20,14 @@ class Handler(ABC):
 
 
 class UploadHandler(Handler):
-    def handle(self, file: UploadFile, client_id: str, processed: bool) -> JSONResponse:
-        content = self.use_case.execute(file, client_id, processed)
+    def handle(
+        self,
+        file: UploadFile,
+        client_id: str,
+        processed: bool,
+        origin_uuid: str | UUID | None,
+    ) -> JSONResponse:
+        content = self.use_case.execute(file, client_id, processed, origin_uuid)
         return JSONResponse(content=content, media_type="application/json")
 
 
