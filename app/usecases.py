@@ -1,3 +1,4 @@
+from datetime import datetime
 import io
 from abc import ABC, abstractmethod
 from uuid import uuid4, UUID
@@ -26,7 +27,7 @@ class ImageUploadUseCase(ImageUseCase):
     image_size = (512, 512)
 
     def execute(
-        self, file: UploadFile, client_id: str, processed: bool
+        self, file: UploadFile, client_id: str, processed: bool, origin_uuid: None | str
     ) -> dict[str, str]:
         uuid = uuid4()
         bytes_io = io.BytesIO(file.file.read())
@@ -42,7 +43,11 @@ class ImageUploadUseCase(ImageUseCase):
                 client_id=client_id,
                 file_name=file.filename,
                 content_type=file.content_type,
-                tags={"processed": processed},
+                tags={
+                    "origin_uuid": origin_uuid,
+                    "processed": processed,
+                    "timestamp": datetime.now().isoformat(),
+                },
             ).dict()
         )
         self.file_system.upload_file(

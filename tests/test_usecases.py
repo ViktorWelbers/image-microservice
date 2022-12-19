@@ -1,12 +1,11 @@
 from io import BytesIO
 from unittest import TestCase
-from unittest.mock import Mock, patch, sentinel
+from unittest.mock import Mock, patch, sentinel, ANY
 
 from PIL import Image
 
 from app.file_system import AzureFileSystem
 from app.repositories import ImageRepository
-from app.schemas import ImageDocument
 from app.usecases import (
     ImageUploadUseCase,
     ImageDeleteUseCase,
@@ -35,10 +34,12 @@ class TestImageUploadUseCase(TestCase):
         file.filename = "test.png"
         file.content_type = "image/png"
 
-        # then
-        self.use_case.execute(file, "test_client_id", sentinel.processed)
+        # when
+        self.use_case.execute(
+            file, "test_client_id", sentinel.processed, sentinel.origin_uuid
+        )
 
-        # expect
+        # then
         self.repository.put_image.assert_called_with(
             {
                 "file_path": "test_client_id/sentinel.uuid",
@@ -46,9 +47,10 @@ class TestImageUploadUseCase(TestCase):
                 "client_id": "test_client_id",
                 "file_name": "test.png",
                 "content_type": "image/png",
-                "tags": {"processed": sentinel.processed},
+                "tags": ANY
             }
         )
+
         self.file_system.upload_file.assert_called_with(
             file_name="test.png",
             file_content=file_content,

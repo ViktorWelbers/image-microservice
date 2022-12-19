@@ -9,3 +9,7 @@ class ImageDocument(BaseModel):
     file_name: str
     content_type: str
     tags: Optional[dict] = None
+
+
+class Payload(BaseModel):
+    data: dict

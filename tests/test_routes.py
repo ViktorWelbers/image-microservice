@@ -38,9 +38,30 @@ class TestHandler(TestCase):
             response = self.client.post(
                 "api/images/upload/test_client_id",
                 files={"file": ("filename", open(sentinel.path), "image/jpeg")},
+                params={"processed": "True", "origin_uuid": "test_origin_uuid"},
             )
 
-            self.handler.handle.assert_called_once_with(ANY, "test_client_id", False)
+            self.handler.handle.assert_called_once_with(
+                ANY, "test_client_id", True, "test_origin_uuid"
+            )
+
+            self._check_successful_response(response, expected)
+
+    def test_upload_image_no_query_params(self) -> None:
+        with patch("builtins.open", mock_open()):
+            expected = {"uuid": "test_uuid"}
+            self.handler.handle.return_value = expected
+            app.dependency_overrides[get_upload_handler] = lambda: self.handler
+
+            response = self.client.post(
+                "api/images/upload/test_client_id",
+                files={"file": ("filename", open(sentinel.path), "image/jpeg")},
+            )
+
+            self.handler.handle.assert_called_once_with(
+                ANY, "test_client_id", False, None
+            )
+
             self._check_successful_response(response, expected)
 
     def test_delete_image(self) -> None:
