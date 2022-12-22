@@ -27,6 +27,11 @@ class UploadHandler(Handler):
         processed: bool,
         origin_uuid: str | UUID | None,
     ) -> JSONResponse:
+        if file.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
+            return JSONResponse(
+                content={"error": "Only jpeg and png images are allowed"},
+                status_code=400,
+            )
         content = self.use_case.execute(file, client_id, processed, origin_uuid)
         return JSONResponse(content=content, media_type="application/json")
 
