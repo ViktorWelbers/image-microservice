@@ -24,7 +24,7 @@ class ImageUseCase(ABC):
 
 
 class ImageUploadUseCase(ImageUseCase):
-    image_size = (512, 512)
+    image_size = (768, 768)
 
     def execute(
         self, file: UploadFile, client_id: str, processed: bool, origin_uuid: None | str
