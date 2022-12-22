@@ -6,6 +6,7 @@ from urllib.request import Request
 import uvicorn
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
+from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse, Response
 
 from app.routes import router as api_router
@@ -30,6 +31,15 @@ app = FastAPI(
     version="1.0",
     servers=[{"url": get_settings().base_url, "description": "Base Url"}],
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(api_router, prefix=get_settings().base_url)
 use_route_names_as_operation_ids(app)
 

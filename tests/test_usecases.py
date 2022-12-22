@@ -47,7 +47,7 @@ class TestImageUploadUseCase(TestCase):
                 "client_id": "test_client_id",
                 "file_name": "test.png",
                 "content_type": "image/png",
-                "tags": ANY
+                "tags": ANY,
             }
         )
 
