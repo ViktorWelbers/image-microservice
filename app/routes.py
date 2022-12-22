@@ -26,7 +26,7 @@ async def upload_image(
     client_id: str,
     origin_uuid: str = None,
     processed: bool = False,
-    file: UploadFile = File(description="", media_type="image/*"),
+    file: UploadFile = File(),
     handler: UploadHandler = Depends(get_upload_handler),
 ) -> JSONResponse:
     return handler.handle(file, client_id, processed, origin_uuid)

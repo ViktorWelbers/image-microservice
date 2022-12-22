@@ -32,6 +32,14 @@ app = FastAPI(
     servers=[{"url": get_settings().base_url, "description": "Base Url"}],
 )
 
+
+@app.middleware("http")
+async def check_api_key(request: Request, call_next: Callable) -> Response:
+    if request.headers.get("Authorization") != get_settings().api_key and request.method != "OPTIONS":
+        return JSONResponse(status_code=401, content={"message": "Unauthorized"})
+    return await call_next(request)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -42,14 +50,6 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=get_settings().base_url)
 use_route_names_as_operation_ids(app)
-
-
-@app.middleware("http")
-async def check_api_key(request: Request, call_next: Callable) -> Response:
-    if request.headers.get("Authorization") != get_settings().api_key:
-        return JSONResponse(status_code=401, content={"message": "Unauthorized"})
-    return await call_next(request)
-
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="localhost", port=5000)
