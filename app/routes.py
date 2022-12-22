@@ -32,7 +32,7 @@ async def upload_image(
     return handler.handle(file, client_id, processed, origin_uuid)
 
 
-@router.post(
+@router.delete(
     "/delete/{uuid}",
     response_class=JSONResponse,
     response_model=dict,

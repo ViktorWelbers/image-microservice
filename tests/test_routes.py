@@ -70,7 +70,7 @@ class TestHandler(TestCase):
         self.handler.handle.return_value = expected
         app.dependency_overrides[get_delete_handler] = lambda: self.handler
 
-        response = self.client.post(f"api/images/delete/{uuid}")
+        response = self.client.delete(f"api/images/delete/{uuid}")
 
         self.handler.handle.assert_called_once_with(uuid)
         self._check_successful_response(response, expected)
