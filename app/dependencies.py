@@ -3,6 +3,7 @@ from pymongo import MongoClient
 
 from app.file_system import AzureFileSystem
 from app.handlers import DownloadHandler, UploadHandler, DeleteHandler, MetadataHandler
+from app.http_client import HttpClient, AuthenticationHttpClient
 from app.repositories import ImageRepository
 from app.settings import get_settings
 from app.usecases import (
@@ -39,6 +40,10 @@ async def get_repository(
     )
 
 
+async def get_http_client() -> HttpClient:
+    return AuthenticationHttpClient(get_settings().authentication_url)
+
+
 async def get_upload_use_case(
     repository: ImageRepository = Depends(get_repository),
     file_system: AzureFileSystem = Depends(get_azure_file_system),
@@ -69,8 +74,9 @@ async def get_client_metadata_use_case(
 
 async def get_upload_handler(
     use_case: ImageUploadUseCase = Depends(get_upload_use_case),
+    http_client: HttpClient = Depends(get_http_client),
 ) -> UploadHandler:
-    return UploadHandler(use_case)
+    return UploadHandler(use_case, http_client)
 
 
 async def get_delete_handler(

@@ -38,6 +38,7 @@ async def check_api_key(request: Request, call_next: Callable) -> Response:
     if (
         request.headers.get("Authorization") != get_settings().api_key
         and request.method != "OPTIONS"
+        and request.method != "POST"
     ):
         return JSONResponse(status_code=401, content={"message": "Unauthorized"})
     return await call_next(request)

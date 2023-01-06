@@ -36,13 +36,14 @@ class TestHandler(TestCase):
             app.dependency_overrides[get_upload_handler] = lambda: self.handler
 
             response = self.client.post(
-                "api/images/upload/test_client_id",
+                "api/images/upload",
                 files={"file": ("filename", open(sentinel.path), "image/jpeg")},
                 params={"processed": "True", "origin_uuid": "test_origin_uuid"},
+                headers={"User-Token": "test_user_token"},
             )
 
             self.handler.handle.assert_called_once_with(
-                ANY, "test_client_id", True, "test_origin_uuid"
+                ANY, "test_user_token", True, "test_origin_uuid"
             )
 
             self._check_successful_response(response, expected)
@@ -54,12 +55,13 @@ class TestHandler(TestCase):
             app.dependency_overrides[get_upload_handler] = lambda: self.handler
 
             response = self.client.post(
-                "api/images/upload/test_client_id",
+                "api/images/upload",
                 files={"file": ("filename", open(sentinel.path), "image/jpeg")},
+                headers={"User-Token": "test_user_token"},
             )
 
             self.handler.handle.assert_called_once_with(
-                ANY, "test_client_id", False, None
+                ANY, "test_user_token", False, None
             )
 
             self._check_successful_response(response, expected)
