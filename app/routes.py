@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, UploadFile, File, Depends, Header
 from fastapi.responses import JSONResponse, FileResponse
 from starlette.responses import Response
 
@@ -17,19 +17,18 @@ router = APIRouter(prefix="/images")
 
 
 @router.post(
-    "/upload/{client_id}",
+    "/upload",
     response_class=JSONResponse,
     response_model=dict,
     tags=["upload"],
 )
 async def upload_image(
-    client_id: str,
-    origin_uuid: str = None,
-    processed: bool = False,
-    file: UploadFile = File(),
-    handler: UploadHandler = Depends(get_upload_handler),
-) -> JSONResponse:
-    return handler.handle(file, client_id, processed, origin_uuid)
+        user_token: str | None = Header(default=None),
+        origin_uuid: str = None,
+        processed: bool = False,
+        file: UploadFile = File(),
+        handler: UploadHandler = Depends(get_upload_handler),) -> JSONResponse:
+    return handler.handle(file, user_token, processed, origin_uuid)
 
 
 @router.delete(
@@ -39,7 +38,7 @@ async def upload_image(
     tags=["delete"],
 )
 def delete_image(
-    uuid: UUID, handler: DeleteHandler = Depends(get_delete_handler)
+        uuid: UUID, handler: DeleteHandler = Depends(get_delete_handler)
 ) -> JSONResponse:
     return handler.handle(uuid)
 
@@ -51,7 +50,7 @@ def delete_image(
     tags=["metadata"],
 )
 def get_metadata_images_for_client_id(
-    client_id: str, handler: MetadataHandler = Depends(get_metadata_handler)
+        client_id: str, handler: MetadataHandler = Depends(get_metadata_handler)
 ) -> list[ImageDocument]:
     return handler.handle(client_id)
 
@@ -62,6 +61,6 @@ def get_metadata_images_for_client_id(
     tags=["download"],
 )
 def download_image(
-    uuid: UUID, handler: DownloadHandler = Depends(get_download_handler)
+        uuid: UUID, handler: DownloadHandler = Depends(get_download_handler)
 ) -> Response:
     return handler.handle(uuid)

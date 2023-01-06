@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import UploadFile
 from starlette.responses import Response, JSONResponse
 
+from app.http_client import HttpClient
 from app.schemas import ImageDocument
 from app.usecases import (
     ImageUseCase,
@@ -20,10 +21,14 @@ class Handler(ABC):
 
 
 class UploadHandler(Handler):
+    def __init__(self, use_case: ImageUseCase, http_client: HttpClient):
+        super().__init__(use_case)
+        self.http_client = http_client
+
     def handle(
         self,
         file: UploadFile,
-        client_id: str,
+        user_token: str,
         processed: bool,
         origin_uuid: str | UUID | None,
     ) -> JSONResponse:
@@ -32,7 +37,12 @@ class UploadHandler(Handler):
                 content={"error": "Only jpeg and png images are allowed"},
                 status_code=400,
             )
-        content = self.use_case.execute(file, client_id, processed, origin_uuid)
+        resp = self.http_client.get(user_token)
+        if resp.status_code != 200:
+            return JSONResponse(
+                content={"error": "Invalid user token"}, status_code=400
+            )
+        content = self.use_case.execute(file, resp.json(), processed, origin_uuid)
         return JSONResponse(content=content, media_type="application/json")
 
 

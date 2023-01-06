@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     azure_account_name: str = os.getenv("AZURE_ACCOUNT_NAME")
     azure_account_key: str = os.getenv("AZURE_ACCOUNT_KEY")
     azure_share_name: str = os.getenv("AZURE_SHARE_NAME")
+    authentication_url: str = os.getenv("AUTHENTICATION_URL")
 
 
 @lru_cache()
