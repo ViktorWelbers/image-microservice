@@ -3,7 +3,7 @@ import io
 from abc import ABC, abstractmethod
 from uuid import uuid4, UUID
 
-from PIL import Image
+from PIL import Image, ImageOps
 from fastapi import UploadFile
 
 from app.file_system import AzureFileSystem
@@ -33,9 +33,11 @@ class ImageUploadUseCase(ImageUseCase):
         uuid = uuid4()
         bytes_io = io.BytesIO(file.file.read())
         image = Image.open(bytes_io)
+        image_format = image.format
+        image = ImageOps.exif_transpose(image)
         image.thumbnail(ImageUploadUseCase.image_size, Image.ANTIALIAS)
         cropped_image_bytes = io.BytesIO()
-        image.save(cropped_image_bytes, format=image.format)
+        image.save(cropped_image_bytes, format=image_format)
         cropped_image_bytes.seek(0)
         self.repository.put_image(
             ImageDocument(
