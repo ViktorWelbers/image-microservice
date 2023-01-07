@@ -36,7 +36,10 @@ class TestImageUploadUseCase(TestCase):
 
         # when
         self.use_case.execute(
-            file, "test_client_id", sentinel.processed, sentinel.origin_uuid
+            file,
+            {"client_id": "test_client_id"},
+            sentinel.processed,
+            sentinel.origin_uuid,
         )
 
         # then

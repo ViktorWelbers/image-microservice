@@ -27,8 +27,9 @@ class ImageUploadUseCase(ImageUseCase):
     image_size = (768, 768)
 
     def execute(
-        self, file: UploadFile, client_id: str, processed: bool, origin_uuid: None | str
+        self, file: UploadFile, body: dict, processed: bool, origin_uuid: None | str
     ) -> dict[str, str]:
+        client_id = body["client_id"]
         uuid = uuid4()
         bytes_io = io.BytesIO(file.file.read())
         image = Image.open(bytes_io)
