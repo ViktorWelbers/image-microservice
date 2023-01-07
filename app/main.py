@@ -1,7 +1,7 @@
 import logging
 from logging.config import dictConfig
 from typing import Callable
-from urllib.request import Request
+from fastapi import Request
 
 import uvicorn
 from fastapi import FastAPI
@@ -35,6 +35,8 @@ app = FastAPI(
 
 @app.middleware("http")
 async def check_api_key(request: Request, call_next: Callable) -> Response:
+    if "/health" in request.url.path:
+        return await call_next(request)
     if (
         request.headers.get("Authorization") != get_settings().api_key
         and request.method != "OPTIONS"
